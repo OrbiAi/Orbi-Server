@@ -1,0 +1,154 @@
+@import url('https://fonts.googleapis.com/css2?family=Figtree:ital,wght@0,300..900;1,300..900&display=swap');
+
+@keyframes pageLoadFade {
+    0% {
+        opacity: 0;
+    }
+    100% {
+        opacity: 1;
+    }
+}
+
+:root {
+    background: black;
+    background-image: url("capture.png");
+    background-size: cover;
+    background-attachment: fixed;
+}
+
+html, body {
+    margin: 0;
+    min-height: 100vh;
+}
+
+body {
+    color: #cdd6f4;
+    display: flex;
+    justify-content: left;
+    align-items: start;
+    background-color: rgba(30, 30, 46, 0.7);
+    backdrop-filter: blur(20px);
+}
+
+main {
+    max-width: 1000px;
+    height: auto;
+    width: 100%;
+    padding: 0 30px;
+}
+
+h1 {
+    font-family: "Figtree", sans-serif;
+    font-optical-sizing: auto;
+    font-weight: 700;
+    font-style: normal;
+    font-size: 40px;
+    color: #b4befe;
+}
+
+h2 {
+    font-family: "Figtree", sans-serif;
+    font-optical-sizing: auto;
+    font-weight: 600;
+    font-style: normal;
+    font-size: 24px;
+}
+
+h3 {
+    font-family: "Figtree", sans-serif;
+    font-optical-sizing: auto;
+    font-weight: 700;
+    font-style: normal;
+    font-size: 15px;
+}
+
+p {
+    font-family: "Figtree", sans-serif;
+    font-optical-sizing: auto;
+    font-weight: 500;
+    font-style: normal;
+    font-size: 16px;
+}
+
+a {
+    color: currentColor;
+    text-decoration: none;
+}
+
+img.capture {
+    width: 100%;
+    height: auto;
+    border-radius: 15px;
+    border: 2px solid #F0F0F0
+}
+
+div.windows {
+    background: #313244;
+    border-radius: 15px;
+    margin-top: 20px;
+    margin-bottom: 30px;
+    padding: 20px;
+}
+
+.windows h3 {
+    margin: 0;
+    margin-bottom: 15px;
+}
+
+.windows p {
+    font-family: "Figtree", sans-serif;
+    font-optical-sizing: auto;
+    font-weight: 500;
+    font-style: normal;
+    font-size: 15px;
+    overflow: hidden;
+    margin: 0;
+}
+
+div.topButtonContainer {
+    margin-right: 15px;
+}
+
+div.topButton {
+    background: #313244;
+    padding-left: 15px;
+    padding-right: 15px;
+    max-width: fit-content;
+    height: 35px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 17.5px;
+    box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25) ;
+    border: 1px solid #555555;
+}
+
+p.topButton  {
+    font-family: "Figtree", sans-serif;
+    font-optical-sizing: auto;
+    font-weight: 600;
+    font-style: normal;
+    font-size: 15px;
+}
+
+img.topButton {
+    margin-right: 5px;
+}
+
+div.top {
+    max-width: fit-content;
+    height: 35px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 30px;
+}
+
+p.top {
+    color: #8D8D8D;
+    font-family: "Figtree", sans-serif;
+    font-optical-sizing: auto;
+    font-weight: 600;
+    font-style: normal;
+    font-size: 12px;
+}

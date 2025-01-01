@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+
+<html lang="en">
+    <head> 
+        <title>Activity Report</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta charset="UTF-8">
+        <link rel="stylesheet" href="/static/template.css">
+    </head>
+
+    <body>
+        <main>
+            <div class="top">
+                <div class="topButtonContainer">
+                    {% if back_all %}
+                    <a href="/all" title="Back">
+                    {% else %}
+                    <a href="/" title="Back">
+                    {% endif %}
+                        <div class="topButton">
+                            <img class="topButton" src="/static/arrow.svg">
+                            <p class="topButton">Back</p>
+                        </div>
+                    </a>
+                </div>
+
+                <div class="topButtonContainer">
+                    <a href="#" title="Delete">
+                        <div class="topButton">
+                            <img class="topButton" src="/static/delete.svg">
+                            <p class="topButton">Delete</p>
+                        </div>
+                    </a>
+                </div>
+
+                <div class="topButtonContainer">
+                    <a href="/api/info/{{ capture.id }}" title="JSON">
+                        <div class="topButton">
+                            <img class="topButton" src="/static/json.svg">
+                            <p class="topButton">JSON</p>
+                        </div>
+                    </a>
+                </div>
+                <p class="top">{{ date }}</p>
+            </div>
+
+            <h1>Activity Report</h1>
+            <h2>{{ capture.focused_window }}</h2>
+            <p>{{ capture.ai_description }}</p>
+            
+            <img class="capture" alt="User Screenshot" src="/api/images/{{ capture.image_name }}">
+
+            <div class="windows">
+                <h3>All Windows</h3>
+                <p>{{ capture.open_windows }}</p>
+            </div>
+        </main>
+    </body>
+</html>
