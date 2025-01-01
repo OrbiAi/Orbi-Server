@@ -1,0 +1,7 @@
+{
+    "port": 3443, 
+    "host": "127.0.0.1",
+    "data_dir": "data",
+    "ollama_server": "http://localhost:11434/api/generate",
+    "tesseract_dir": "C:\\Program Files\\Tesseract-OCR\\tesseract.exe"
+}
