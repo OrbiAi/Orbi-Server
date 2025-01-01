@@ -214,6 +214,27 @@ def images_endpoint(name):
     print(os.path.join(DATA_DIR, 'images', name))
     return send_from_directory(os.path.join(DATA_DIR, 'images'), name)
 
+@app.route('/stats', methods=['GET'])
+def stats_endpoint():
+    conn = sqlite3.connect(DATABASE)
+    cursor = conn.cursor()
+    cursor.execute('''
+        SELECT COUNT(*) FROM captures
+    ''')
+    total_captures = cursor.fetchone()[0]
+    conn.close()
+    
+    total_size = 0
+    for dirpath, dirnames, filenames in os.walk(DATA_DIR):
+        for f in filenames:
+            fp = os.path.join(dirpath, f)
+            total_size += os.path.getsize(fp)
+    
+    return jsonify({
+        'total_captures': total_captures,
+        'total_size': total_size
+    })
+
 if __name__ == '__main__':
     init_db()
     app.run(debug=True, host=HOST, port=PORT)
