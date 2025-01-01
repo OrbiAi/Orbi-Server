@@ -1,4 +1,5 @@
 from flask import Flask, jsonify, request, send_from_directory
+from flask_cors import CORS
 import os
 import sqlite3
 from datetime import datetime
@@ -10,6 +11,7 @@ import pytesseract
 import requests
 
 app = Flask(__name__)
+CORS(app, resources={r"/*": {"origins": "*"}})
 
 with open('config.json') as config_file:
     config = json.load(config_file)
