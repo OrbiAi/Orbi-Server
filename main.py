@@ -155,9 +155,10 @@ def images_endpoint(name):
 
 @app.route('/api/stats', methods=['GET'])
 def stats_endpoint():
-    total_captures, readable_size = get_stats()
+    total_captures, processed_captures, readable_size = get_stats()
     return jsonify({
         'total_captures': total_captures,
+        'processed_captures': processed_captures,
         'total_size': readable_size
     })
 

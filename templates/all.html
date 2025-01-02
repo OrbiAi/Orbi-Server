@@ -184,7 +184,7 @@
         <main>
             <div class="top">
                 <div class="topButtonContainer">
-                    <a href="/all" title="Back">
+                    <a href="/" title="Back">
                         <div class="topButton">
                             <img class="topButton" src="/static/arrow.svg">
                             <p class="topButton">Back</p>
@@ -198,7 +198,7 @@
                 <button type="submit"><img class="searchIcon" src="/static/search.svg" draggable="false"></button>
             </form>
             
-            <p>{{ total_captures }} captures, {{ total_size }} consumed</p>
+            <p>{{ processed_captures }} captures, {{ total_size }} consumed</p>
             
             {% for capture in captures %}
             <a href="/info/{{ capture.id }}?back=all">
@@ -211,7 +211,23 @@
                 </div>
             </a>
             {% endfor %}
-
+            </div>
+            <div class="pagination">
+                {% if page > 1 %}
+                    <a href="{{ url_for('frontend.all_captures', page=page-1) }}">Previous</a>
+                {% endif %}
+                
+                {% for p in range(1, total_pages + 1) %}
+                    {% if p == page %}
+                        <strong>{{ p }}</strong>
+                    {% else %}
+                        <a href="{{ url_for('frontend.all_captures', page=p) }}">{{ p }}</a>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if page < total_pages %}
+                    <a href="{{ url_for('frontend.all_captures', page=page+1) }}">Next</a>
+                {% endif %}
             </div>
         </main>
     </body>

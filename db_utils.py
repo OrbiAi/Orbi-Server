@@ -17,10 +17,17 @@ def format_size(size):
 def get_stats():
     conn = sqlite3.connect(DATABASE)
     cursor = conn.cursor()
+    # get total captures
     cursor.execute('''
         SELECT COUNT(*) FROM captures
     ''')
     total_captures = cursor.fetchone()[0]
+    # get processed captures
+    cursor.execute('''
+        SELECT COUNT(*) FROM captures WHERE processed = 1
+    ''')
+    processed_captures = cursor.fetchone()[0]
+    # get total size
     total_size = 0
     for dirpath, dirnames, filenames in os.walk(DATA_DIR):
         for f in filenames:
@@ -28,7 +35,7 @@ def get_stats():
             total_size += os.path.getsize(fp)
     readable_size = format_size(total_size)
     conn.close()
-    return total_captures, readable_size
+    return total_captures, processed_captures, readable_size
 
 def get_captures(max=-1, skip=0, search=""):
     conn = sqlite3.connect(DATABASE)

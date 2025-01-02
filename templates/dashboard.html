@@ -187,7 +187,7 @@
                 <button type="submit"><img class="searchIcon" src="/static/search.svg" draggable="false"></button>
             </form>
             
-            <p>{{ total_captures }} captures, {{ total_size }} consumed</p>
+            <p>{{ processed_captures }} captures, {{ total_size }} consumed</p>
             
             {% for capture in captures %}
             <a href="/info/{{ capture.id }}">
