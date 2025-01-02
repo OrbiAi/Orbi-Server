@@ -1,8 +1,5 @@
 from flask import Blueprint, render_template, abort, request
-import os
-import json
 from db_utils import get_stats, get_captures, get_capture_info
-import psutil
 
 frontend = Blueprint('frontend', __name__)
 
