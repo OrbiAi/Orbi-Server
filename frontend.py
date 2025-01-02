@@ -5,12 +5,20 @@ from db_utils import get_stats, get_captures, get_capture_info
 
 frontend = Blueprint('frontend', __name__)
 
+@frontend.route('/')
+def homepage():
+    # get stats
+    total_captures, processed_captures, readable_size = get_stats()
+    capture_list = get_captures(max=5, ignore_incomplete=True)
+    return render_template('homepage.html', processed_captures=processed_captures, total_size=readable_size, captures=capture_list)
+
 @frontend.route('/all')
 def all_captures():
+    # get stats
     total_captures, processed_captures, readable_size = get_stats()
-    capture_list = get_captures()
-    capture_list = [capture for capture in capture_list if capture['processed'] != 0]
+    capture_list = get_captures(ignore_incomplete=True)
     per_page = 25 # TODO: make this changable via the web ui
+    # do pages
     page = request.args.get('page', 1, type=int)
     total_pages = (len(capture_list) + per_page - 1) // per_page
     capture_list = capture_list[(page - 1) * per_page: page * per_page]

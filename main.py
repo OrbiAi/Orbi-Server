@@ -131,7 +131,8 @@ def search_endpoint():
     query = request.args.get('query', '')
     max_items = request.args.get('max', type=int, default=-1)
     skip_items = request.args.get('skip', type=int, default=0)
-    capture_list = get_captures(max=max_items, skip=skip_items, search=query)
+    ignore_incomplete = request.args.get('ignore_incomplete', 'false').lower() == 'true'
+    capture_list = get_captures(max=max_items, skip=skip_items, search=query, ignore_incomplete=ignore_incomplete)
     return jsonify(capture_list)
 
 @app.route('/api/info/<id>', methods=['GET'])

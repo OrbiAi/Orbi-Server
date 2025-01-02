@@ -37,15 +37,22 @@ def get_stats():
     conn.close()
     return total_captures, processed_captures, readable_size
 
-def get_captures(max=-1, skip=0, search=""):
+def get_captures(max=-1, skip=0, search="", ignore_incomplete=False):
     conn = sqlite3.connect(DATABASE)
     cursor = conn.cursor()
-    cursor.execute('''
+    query = '''
         SELECT * FROM captures
-        WHERE LOWER(open_windows) LIKE LOWER(?) OR LOWER(text_seen) LIKE LOWER(?)
-        ORDER BY id DESC
-        LIMIT ? OFFSET ?
-    ''', ('%' + search + '%', '%' + search + '%', max, skip))
+        WHERE (LOWER(open_windows) LIKE LOWER(?) OR LOWER(text_seen) LIKE LOWER(?))
+    '''
+    params = ['%' + search + '%', '%' + search + '%']
+    
+    if ignore_incomplete:
+        query += ' AND processed = 1'
+    
+    query += ' ORDER BY id DESC LIMIT ? OFFSET ?'
+    params.extend([max, skip])
+    
+    cursor.execute(query, params)
     captures = cursor.fetchall()
     capture_list = []
     for capture in captures:
