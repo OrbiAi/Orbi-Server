@@ -11,9 +11,6 @@
 
 :root {
     background: black;
-    background-image: url("capture.png");
-    background-size: cover;
-    background-attachment: fixed;
 }
 
 html, body {

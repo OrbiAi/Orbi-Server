@@ -25,7 +25,7 @@
                 </div>
 
                 <div class="topButtonContainer">
-                    <a href="#" title="Delete">
+                    <a href="#" title="Delete" onclick="deleteCapture('{{ capture.id }}')">
                         <div class="topButton">
                             <img class="topButton" src="/static/delete.svg">
                             <p class="topButton">Delete</p>
@@ -55,5 +55,20 @@
                 <p>{{ capture.open_windows }}</p>
             </div>
         </main>
+        <script>
+        function deleteCapture(id) {
+            if (confirm('Are you sure you want to delete this capture?')) {
+                fetch(`/api/delete/${id}`, {
+                    method: 'DELETE'
+                }).then(response => {
+                    if (response.ok) {
+                        window.location.href = '/';
+                    } else {
+                        alert('Failed to delete capture.');
+                    }
+                });
+            }
+        }
+        </script>
     </body>
 </html>
