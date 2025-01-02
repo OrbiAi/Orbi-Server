@@ -27,14 +27,13 @@ PORT = config['port']
 from frontend import frontend
 app.register_blueprint(frontend)
 
-conn = sqlite3.connect(DATABASE, check_same_thread=False)
-cursor = conn.cursor()
-
 def init_db():
     if not os.path.exists(DATA_DIR):
         os.makedirs(DATA_DIR)
     if not os.path.exists(os.path.join(DATA_DIR, 'images')):
         os.makedirs(os.path.join(DATA_DIR, 'images'))
+    conn = sqlite3.connect(DATABASE, check_same_thread=False)
+    cursor = conn.cursor()
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS captures (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -48,6 +47,12 @@ def init_db():
         )
     ''')
     conn.commit()
+    conn.close()
+
+init_db()
+
+conn = sqlite3.connect(DATABASE, check_same_thread=False)
+cursor = conn.cursor()
 
 capture_queue = Queue()
 
@@ -164,5 +169,4 @@ def stats_endpoint():
     })
 
 if __name__ == '__main__':
-    init_db()
     app.run(debug=True, host=HOST, port=PORT)
