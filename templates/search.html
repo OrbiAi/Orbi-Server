@@ -74,6 +74,25 @@
                 color: currentColor;
                 text-decoration: none;
             }
+
+            .searchContainer {
+                display: flex;
+                justify-content: left;
+                margin-bottom: 30px;
+            }
+
+            .backButton {
+                width: 40px;
+                height: 40px;
+                background: #313244;
+                border: 1px solid #555555;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                border-radius: 50%;
+                box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25) ;
+                
+            }
             
             .searchBar {
                 max-width: 340px;
@@ -83,7 +102,6 @@
                 display: flex;
                 justify-content: left;
                 align-items: center;
-                margin-bottom: 30px;
                 border: 1px solid #555555;
                 box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25) ;
             }
@@ -134,7 +152,7 @@
                 display: flex;
                 justify-content: left;
                 align-items: center;
-                margin-bottom: 20px;
+                margin-bottom: 30px;
                 background: #313244;
                 border: 1px solid #555555;
                 border-radius: 15px;
@@ -165,41 +183,31 @@
                 font-weight: 500;
                 margin-right: 20px;
             }
-
-            .folderButton {
-                width: 130px;
-                height: fit-content;
-                background: #313244;
-                border-radius: 20px;
-                text-align: center;
-                margin-bottom: 30px;
-                border: 1px solid #555555;
-                box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25) ;
-            }
         </style>
-        <link rel="stylesheet" href="/static/template.css">
     </head>
 
     <body>
         <main>
-            <div class="top">
-                <div class="topButtonContainer">
-                    <a href="/" title="Back">
-                        <div class="topButton">
-                            <img class="topButton" src="/static/arrow.svg">
-                            <p class="topButton">Back</p>
+            <h1>Search</h1>
+            <div class="searchContainer">
+                <div class="backButtonContainer" style="padding-right: 15px;">
+                    {% if back_all %}
+                    <a href="/all">
+                    {% else %}
+                    <a href="/">
+                    {% endif %}
+                        <div class="backButton">
+                            <img src="/static/arrow.svg" style="width: 15px; height: 15px;">
                         </div>
                     </a>
                 </div>
+                <form action="/search" method="get" class="searchBar">
+                    <input type="text" placeholder="Search.." name="query" value="{{ request.args.get('query', '') }}" class="searchInput">
+                    <button type="submit"><img class="searchIcon" src="/static/search.svg" draggable="false"></button>
+                </form>
             </div>
-            <h1>All Captures</h1>
-            <form action="/search" method="get" class="searchBar">
-                <input type="text" placeholder="Search.." name="query" value="{{ request.args.get('query', '') }}" class="searchInput">
-                <input type="hidden" name="back" value="all">
-                <button type="submit"><img class="searchIcon" src="/static/search.svg" draggable="false"></button>
-            </form>
-            
-            <p>{{ processed_captures }} captures, {{ total_size }} consumed</p>
+
+            <p>{{ capture_amount }} captures found matching "{{ request.args.get('query', '') }}"</p>
             
             {% for capture in captures %}
             <a href="/info/{{ capture.id }}?back=all">
@@ -215,19 +223,19 @@
             </div>
             <div class="pagination">
                 {% if page > 1 %}
-                    <a href="{{ url_for('frontend.all_captures', page=page-1) }}">Previous</a>
+                    <a href="{{ url_for('frontend.search', page=page-1, query=request.args.get('query', ''), back=request.args.get('back', '')) }}">Previous</a>
                 {% endif %}
                 
                 {% for p in range(1, total_pages + 1) %}
                     {% if p == page %}
                         <strong>{{ p }}</strong>
                     {% else %}
-                        <a href="{{ url_for('frontend.all_captures', page=p) }}">{{ p }}</a>
+                        <a href="{{ url_for('frontend.search', page=p, query=request.args.get('query', ''), back=request.args.get('back', '')) }}">{{ p }}</a>
                     {% endif %}
                 {% endfor %}
                 
                 {% if page < total_pages %}
-                    <a href="{{ url_for('frontend.all_captures', page=page+1) }}">Next</a>
+                    <a href="{{ url_for('frontend.search', page=page+1, query=request.args.get('query', ''), back=request.args.get('back', '')) }}">Next</a>
                 {% endif %}
             </div>
         </main>
