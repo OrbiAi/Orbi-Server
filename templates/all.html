@@ -207,7 +207,7 @@
                     <img class="listItem" src="/api/images/{{ capture.image_name }}">
                     <div class="textContainer">
                         <p class="itemTitle">{{ capture.focused_window }}</p>
-                        <p class="itemTime">{{ capture.timestamp }}</p>
+                        <p class="itemTime">{{ capture.timestamp | to_datetime | datetimeformat }}</p>
                     </div>
                 </div>
             </a>

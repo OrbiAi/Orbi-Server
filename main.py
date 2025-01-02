@@ -9,6 +9,7 @@ from queue import Queue
 from threading import Thread
 import pytesseract
 import requests
+from datetime import datetime
 from db_utils import get_stats, get_captures, get_capture_info, delete_capture
 
 app = Flask(__name__)
@@ -96,6 +97,18 @@ def process_capture():
         capture_queue.task_done()
 
 Thread(target=process_capture, daemon=True).start()
+
+@app.template_filter('datetimeformat')
+def datetimeformat(value, format='%Y-%m-%d %H:%M:%S'):
+    if isinstance(value, str):
+        value = datetime.fromisoformat(value)
+    return value.strftime(format)
+
+@app.template_filter('to_datetime')
+def to_datetime(value):
+    if isinstance(value, str):
+        return datetime.fromisoformat(value)
+    return value
 
 @app.route('/api/submit', methods=['POST'])
 def submit_endpoint():

@@ -46,6 +46,7 @@
 
             <h1>Activity Report</h1>
             <h2>{{ capture.focused_window }}</h2>
+            <p>{{ capture.timestamp | to_datetime | datetimeformat }}</p>
             <p>{{ capture.ai_description }}</p>
             
             <img class="capture" alt="User Screenshot" src="/api/images/{{ capture.image_name }}">
