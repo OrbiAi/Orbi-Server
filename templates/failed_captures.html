@@ -213,14 +213,24 @@
                 </div>
             </a>
             
-            <p>{{ total_failed }} failed captures</p>
+            <p id="total_failed">{{ total_failed }} failed captures</p>
             
             {% for capture in failed_captures %}
-            <div class="listItem" style="animation: 0.5s itemFade;">
-                <img class="listItem" src="/api/images/{{ capture.image_name }}">
-                <div class="textContainer">
-                    <p class="itemTitle">{{ capture.focused_window }}</p>
-                    <p class="itemTime">{{ capture.timestamp | to_datetime | datetimeformat }}</p>
+            <div id="capture-{{ capture.id }}" class="listItem" style="animation: 0.5s itemFade; display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; align-items: center;">
+                    <img class="listItem" src="/api/images/{{ capture.image_name }}">
+                    <div class="textContainer">
+                        <p class="itemTitle">{{ capture.focused_window }}</p>
+                        <p class="itemTime">{{ capture.timestamp | to_datetime | datetimeformat }}</p>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 10px; margin-right: 20px;">
+                    <button onclick="retryCapture({{ capture.id }})" title="Retry" style="background: transparent; border: none; cursor: pointer; display: flex; justify-content: center; align-items: center;">
+                        <img src="/static/refresh.svg" alt="Retry" style="width: 27px; height: 27px;">
+                    </button>
+                    <button onclick="deleteCapture({{ capture.id }})" title="Delete" style="background: transparent; border: none; cursor: pointer; display: flex; justify-content: center; align-items: center;">
+                        <img src="/static/delete.svg" alt="Delete" style="width: 20px; height: 20px;">
+                    </button>
                 </div>
             </div>
             {% endfor %}
@@ -243,5 +253,62 @@
                 {% endif %}
             </div>
         </main>
+
+        <script>
+            function deleteCapture(id) {
+                fetch(`/api/delete/${id}`, {
+                    method: 'DELETE'
+                }).then(response => {
+                    if (response.ok) {
+                        // remove deleted element
+                        const captureElement = document.getElementById(`capture-${id}`);
+                        if (captureElement) {
+                            captureElement.remove();
+                        }
+                        // decrease counter
+                        const totalFailedElement = document.getElementById('total_failed');
+                        const totalFailedText = totalFailedElement.textContent;
+                        const totalFailedCount = parseInt(totalFailedText.match(/\d+/)[0]);
+                        totalFailedElement.textContent = `${totalFailedCount - 1} failed captures`;
+                    } else if (response.status === 404) {
+                        alert('Capture not found.');
+                    } else if (response.status === 500) {
+                        alert('Server error. Please try again later.');
+                    } else {
+                        alert('Failed to delete capture.');
+                    }
+                });
+            }
+
+            function retryCapture(id) {
+                fetch(`/api/retry/${id}`, {
+                    method: 'POST'
+                }).then(response => {
+                    if (response.ok) {
+                        // handle successful retry
+                        const captureElement = document.getElementById(`capture-${id}`);
+                        if (captureElement) {
+                        // create a temporary parent div so not-allowed cursor works with pointerevents set to none
+                        // todo: fix flashing
+                        let tempParent = document.createElement('div');
+                        tempParent.style.cursor = 'not-allowed';
+                        
+                        captureElement.parentNode.insertBefore(tempParent, captureElement);
+                        tempParent.appendChild(captureElement);
+
+                        captureElement.style.pointerEvents = 'none';
+                        captureElement.style.opacity = '0.5';
+                    }
+
+                    } else if (response.status === 404) {
+                        alert('Capture not found.');
+                    } else if (response.status === 500) {
+                        alert('Server error. Please try again later.');
+                    } else {
+                        alert('Failed to retry capture.');
+                    }
+                });
+            }
+        </script>
     </body>
 </html>

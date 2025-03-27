@@ -195,6 +195,28 @@ def delete_endpoint(id):
     else:
         return jsonify(message="Capture not found"), 404
     
+@app.route('/api/retry/<id>', methods=['POST'])
+def retry_endpoint(id):
+    if get_capture_info(id):
+        # check if already processed
+        cursor.execute('''
+            SELECT processed FROM captures WHERE id = ?
+        ''', (id,))
+        processed = cursor.fetchone()[0]
+        if processed is None or processed != 2:
+            return jsonify(message="Capture already processed"), 400
+        else:
+            # mark as unprocessed
+            cursor.execute('''
+                UPDATE captures SET processed = 0 WHERE id = ?
+            ''', (id,))
+            conn.commit()
+        # add to queue for processing
+        add_capture_to_queue(id)
+        return jsonify(message="Capture retried")
+    else:
+        return jsonify(message="Capture not found"), 404
+    
 @app.route('/api/images/<name>', methods=['GET'])
 def images_endpoint(name):
     print(os.path.join(DATA_DIR, 'images', name))
