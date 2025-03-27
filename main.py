@@ -10,7 +10,7 @@ from threading import Thread
 import pytesseract
 import requests
 from datetime import datetime
-from db_utils import get_stats, get_captures, get_capture_info, delete_capture
+from db_utils import get_stats, get_captures, get_capture_info, delete_capture, mass_action_failed_captures
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
@@ -216,6 +216,21 @@ def retry_endpoint(id):
         return jsonify(message="Capture retried")
     else:
         return jsonify(message="Capture not found"), 404
+    
+@app.route('/api/mass_action_on_failed/<action>', methods=['POST'])
+def mass_action_on_failed_endpoint(action):
+    if action not in ['retry', 'delete']:
+        return jsonify(message="Invalid action"), 400
+    # get all failed captures
+    failed_captures = get_captures(failed_only=True)
+    if not failed_captures:
+        return jsonify(message="No failed captures found"), 404
+    mass_action_failed_captures(action)
+    # if action is retry add all failed captures to queue
+    if action == 'retry':
+        for capture in failed_captures:
+            add_capture_to_queue(capture['id'])
+    return jsonify(message="Mass action started"), 200
     
 @app.route('/api/images/<name>', methods=['GET'])
 def images_endpoint(name):

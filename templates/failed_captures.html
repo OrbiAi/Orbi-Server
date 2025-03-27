@@ -199,14 +199,14 @@
                 <button type="submit"><img class="searchIcon" src="/static/search.svg" draggable="false"></button>
             </form>
 
-            <a href="#" title="Back">
+            <a onclick="retryAll()" href="#" title="Retry all">
                 <div class="topButton">
                     <img class="topButton" src="/static/refresh.svg">
                     <p class="topButton">Retry all</p>
                 </div>
             </a>
 
-            <a href="#" title="Back">
+            <a onclick="deleteAll()" href="#" title="Delete all">
                 <div class="topButton">
                     <img class="topButton" src="/static/delete.svg">
                     <p class="topButton">Delete all</p>
@@ -308,6 +308,44 @@
                         alert('Failed to retry capture.');
                     }
                 });
+            }
+
+            function retryAll() {
+                if(confirm("This can cause signifinant load on the server if there are multiple failed captures. Are you sure you want to retry all failed captures?")) {
+                    fetch('/api/mass_action_on_failed/retry', {
+                        method: 'POST'
+                    }).then(response => {
+                        if (response.ok) {
+                            // handle successful retry
+                            location.reload();
+                        } else if (response.status === 404) {
+                            alert('No failed captures found.');
+                        } else if (response.status === 500) {
+                            alert('Server error. Please try again later.');
+                        } else {
+                            alert('Failed to retry capture.');
+                        }
+                    });
+                }
+            }
+
+            function deleteAll() {
+                if(confirm("Are you sure you want to delete all failed captures?")) {
+                    fetch('/api/mass_action_on_failed/delete', {
+                        method: 'POST'
+                    }).then(response => {
+                        if (response.ok) {
+                            // handle successful retry
+                            location.reload();
+                        } else if (response.status === 404) {
+                            alert('No failed captures found.');
+                        } else if (response.status === 500) {
+                            alert('Server error. Please try again later.');
+                        } else {
+                            alert('Failed to delete captures.');
+                        }
+                    });
+                }
             }
         </script>
     </body>

@@ -117,3 +117,26 @@ def delete_capture(capture_id):
     else:
         conn.close()
         return False
+
+def mass_action_failed_captures(action):
+    conn = sqlite3.connect(DATABASE)
+    cursor = conn.cursor()
+    if action == 'delete':
+        cursor.execute('''
+            SELECT image_name FROM captures WHERE processed = 2
+        ''')
+        failed_captures = cursor.fetchall()
+        for capture in failed_captures:
+            image_name = capture[0]
+            image_path = os.path.join(os.path.join(DATA_DIR, 'images'), image_name)
+            if os.path.exists(image_path):
+                os.remove(image_path)
+        cursor.execute('''
+            DELETE FROM captures WHERE processed = 2
+        ''')
+    elif action == 'retry':
+        cursor.execute('''
+            UPDATE captures SET processed = 0 WHERE processed = 2
+        ''')
+    conn.commit()
+    conn.close()
