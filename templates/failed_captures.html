@@ -182,51 +182,66 @@
 
     <body>
         <main>
-            <h1>Home</h1>
+            <div class="top">
+                <div class="topButtonContainer">
+                    <a href="/" title="Back">
+                        <div class="topButton">
+                            <img class="topButton" src="/static/arrow.svg">
+                            <p class="topButton">Back</p>
+                        </div>
+                    </a>
+                </div>
+            </div>
+            <h1>Failed Captures</h1>
             <form action="/search" method="get" class="searchBar">
                 <input type="text" placeholder="Search.." name="query" value="{{ request.args.get('query', '') }}" class="searchInput">
+                <input type="hidden" name="back" value="all">
                 <button type="submit"><img class="searchIcon" src="/static/search.svg" draggable="false"></button>
             </form>
-            
-            <p>{{ processed_captures }} captures, {{ total_size }} consumed</p>
 
-            {% if failed_captures %}
-            <h2>Alerts</h2>
-
-            <a href="/failed_captures">
-                <div class="listItem" style="animation: 0.5s itemFade;">
-                    <img class="listItem" style="border: none" src="/static/red_error.webp">
-                    <div class="textContainer">
-                        <p class="itemTitle">There are failed captures</p>
-                        <p class="itemTime">{{ failed_captures | length }} failed captures found. Click for more info.</p>
-                    </div>
+            <a href="#" title="Back">
+                <div class="topButton">
+                    <img class="topButton" src="/static/refresh.svg">
+                    <p class="topButton">Retry all</p>
                 </div>
             </a>
-            {% endif %}
 
-            <h2>Recent Captures</h2>
-            
-            {% for capture in captures %}
-            <a href="/info/{{ capture.id }}">
-                <div class="listItem" style="animation: 0.5s itemFade;">
-                    <img class="listItem" src="/api/images/{{ capture.image_name }}">
-                    <div class="textContainer">
-                        <p class="itemTitle">{{ capture.focused_window }}</p>
-                        <p class="itemTime">{{ capture.timestamp | to_datetime | datetimeformat }}</p>
-                    </div>
+            <a href="#" title="Back">
+                <div class="topButton">
+                    <img class="topButton" src="/static/delete.svg">
+                    <p class="topButton">Delete all</p>
                 </div>
             </a>
-            {% endfor %}
-
-            <div class="topButtonContainer">
-                <a href="/all" title="JSON">
-                    <div class="topButton">
-                        <img class="topButton" src="/static/json.svg">
-                        <p class="topButton">View all</p>
-                    </div>
-                </a>
+            
+            <p>{{ total_failed }} failed captures</p>
+            
+            {% for capture in failed_captures %}
+            <div class="listItem" style="animation: 0.5s itemFade;">
+                <img class="listItem" src="/api/images/{{ capture.image_name }}">
+                <div class="textContainer">
+                    <p class="itemTitle">{{ capture.focused_window }}</p>
+                    <p class="itemTime">{{ capture.timestamp | to_datetime | datetimeformat }}</p>
+                </div>
             </div>
-
+            {% endfor %}
+            </div>
+            <div class="pagination">
+                {% if page > 1 %}
+                    <a href="{{ url_for('frontend.failed_captures', page=page-1) }}">Previous</a>
+                {% endif %}
+                
+                {% for p in range(1, total_pages + 1) %}
+                    {% if p == page %}
+                        <strong>{{ p }}</strong>
+                    {% else %}
+                        <a href="{{ url_for('frontend.failed_captures', page=p) }}">{{ p }}</a>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if page < total_pages %}
+                    <a href="{{ url_for('frontend.failed_captures', page=page+1) }}">Next</a>
+                {% endif %}
+            </div>
         </main>
     </body>
 </html>

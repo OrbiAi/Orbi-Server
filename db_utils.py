@@ -37,7 +37,7 @@ def get_stats():
     conn.close()
     return total_captures, processed_captures, readable_size
 
-def get_captures(max=-1, skip=0, search="", ignore_incomplete=False):
+def get_captures(max=-1, skip=0, search="", processed_only=False, failed_only=False, incomplete_only=False):
     conn = sqlite3.connect(DATABASE)
     cursor = conn.cursor()
     query = '''
@@ -46,8 +46,12 @@ def get_captures(max=-1, skip=0, search="", ignore_incomplete=False):
     '''
     params = ['%' + search + '%', '%' + search + '%']
     
-    if ignore_incomplete:
+    if incomplete_only:
+        query += ' AND processed = 0'
+    if processed_only:
         query += ' AND processed = 1'
+    if failed_only:
+        query += ' AND processed = 2'
     
     query += ' ORDER BY id DESC LIMIT ? OFFSET ?'
     params.extend([max, skip])

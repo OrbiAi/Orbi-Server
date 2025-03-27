@@ -55,46 +55,74 @@ init_db()
 conn = sqlite3.connect(DATABASE, check_same_thread=False)
 cursor = conn.cursor()
 
+# mark all incomplete captures as failed
+incomplete_captures = get_captures(incomplete_only=True)
+print(f"Marking {len(incomplete_captures)} incomplete captures as failed")
+for capture in incomplete_captures:
+    cursor.execute('''
+        UPDATE captures SET processed = 2 WHERE id = ?
+    ''', (capture['id'],))
+conn.commit()
+
 capture_queue = Queue()
+retry_limit = 1  # todo: add to config.json
 
 def process_capture():
     while True:
-        capture_id = capture_queue.get()
-        print(f"Processing capture {capture_id}")
-        # get info
-        cursor.execute('''
-            SELECT * FROM captures WHERE id = ?
-        ''', (capture_id,))
-        capture = cursor.fetchone()
-        file_name = capture[2]
-        file_path = os.path.join(os.path.join(DATA_DIR, 'images'), file_name)
-        focused_window = capture[3]
-        open_windows = capture[4]
-        # ocr
-        pytesseract.pytesseract.tesseract_cmd = TESSERACT_CMD
-        text_seen = ' '.join(pytesseract.image_to_string(file_path).split())
-        cursor.execute('''
-            UPDATE captures SET text_seen = ? WHERE id = ?
-        ''', (text_seen, capture_id))
-        # ai
-        data = {
-            "model": "llama3:8b",
-            "system": "You will be given text, which is seen on someone's computer screen, as well as their open windows. Your ONLY job is to respond with an assumption of what you think they're doing on their computer.  You shouldn't mention why you think so, you should just say what they're doing, say it clearly, be confident. You should provide it in a documentation-style text, should be 1-6 sentences in a 3rd person view and past simple time, refer to the user as 'user'. You should ONLY say about what the user is currently doing on the MAIN window, unless the other windows are clearly related.",
-            "prompt": f"Focused window: {focused_window}\nOpen windows: {open_windows}\nText on screen: {text_seen}",
-            "stream": False
-        }
-        r = requests.post(OLLAMA_SERVER, json=data)
-        r.raise_for_status()
-        ai_description = r.json()['response']
-        cursor.execute('''
-            UPDATE captures SET ai_description = ? WHERE id = ?
-        ''', (ai_description, capture_id))
-        # ---
-        cursor.execute('''
-            UPDATE captures SET processed = 1 WHERE id = ?
-        ''', (capture_id,))
-        conn.commit()
-        capture_queue.task_done()
+        capture_id, retries = capture_queue.get()
+        try:
+            print(f"Processing capture {capture_id}, attempt {retries + 1}")
+            # get info
+            cursor.execute('''
+                SELECT * FROM captures WHERE id = ?
+            ''', (capture_id,))
+            capture = cursor.fetchone()
+            file_name = capture[2]
+            file_path = os.path.join(os.path.join(DATA_DIR, 'images'), file_name)
+            focused_window = capture[3]
+            open_windows = capture[4]
+            # ocr
+            pytesseract.pytesseract.tesseract_cmd = TESSERACT_CMD
+            text_seen = ' '.join(pytesseract.image_to_string(file_path).split())
+            cursor.execute('''
+                UPDATE captures SET text_seen = ? WHERE id = ?
+            ''', (text_seen, capture_id))
+            # ai
+            data = {
+                "model": "llama3:8b",
+                "system": "You will be given text, which is seen on someone's computer screen, as well as their open windows. Your ONLY job is to respond with an assumption of what you think they're doing on their computer.  You shouldn't mention why you think so, you should just say what they're doing, say it clearly, be confident. You should provide it in a documentation-style text, should be 1-6 sentences in a 3rd person view and past simple time, refer to the user as 'user'. You should ONLY say about what the user is currently doing on the MAIN window, unless the other windows are clearly related.",
+                "prompt": f"Focused window: {focused_window}\nOpen windows: {open_windows}\nText on screen: {text_seen}",
+                "stream": False
+            }
+            r = requests.post(OLLAMA_SERVER, json=data)
+            r.raise_for_status()
+            ai_description = r.json()['response']
+            cursor.execute('''
+                UPDATE captures SET ai_description = ? WHERE id = ?
+            ''', (ai_description, capture_id))
+            # mark as processed
+            cursor.execute('''
+                UPDATE captures SET processed = 1 WHERE id = ?
+            ''', (capture_id,))
+            conn.commit()
+            print(f"Capture {capture_id} processed successfully.")
+        except Exception as e:
+            print(f"Error processing capture {capture_id}: {e}")
+            if retries < retry_limit - 1:
+                capture_queue.put((capture_id, retries + 1))
+            else:
+                print(f"Capture {capture_id} failed after {retry_limit} attempts.")
+                # proccessed = 2 means failed
+                cursor.execute('''
+                    UPDATE captures SET processed = 2 WHERE id = ?
+                ''', (capture_id,))
+                conn.commit()
+        finally:
+            capture_queue.task_done()
+
+# modify queue to include retry count
+def add_capture_to_queue(capture_id):
+    capture_queue.put((capture_id, 0))
 
 Thread(target=process_capture, daemon=True).start()
 
@@ -141,7 +169,7 @@ def submit_endpoint():
         capture_id = cursor.lastrowid
         conn.commit()
         # add to queue for processing
-        capture_queue.put(capture_id)
+        add_capture_to_queue(capture_id)
         return jsonify(message="Capture submitted"), 200
 
 @app.route('/api/search', methods=['GET'])
@@ -149,8 +177,8 @@ def search_endpoint():
     query = request.args.get('query', '')
     max_items = request.args.get('max', type=int, default=-1)
     skip_items = request.args.get('skip', type=int, default=0)
-    ignore_incomplete = request.args.get('ignore_incomplete', 'false').lower() == 'true'
-    capture_list = get_captures(max=max_items, skip=skip_items, search=query, ignore_incomplete=ignore_incomplete)
+    processed_only = request.args.get('processed_only', 'false').lower() == 'true'
+    capture_list = get_captures(max=max_items, skip=skip_items, search=query, processed_only=processed_only)
     return jsonify(capture_list)
 
 @app.route('/api/info/<id>', methods=['GET'])
