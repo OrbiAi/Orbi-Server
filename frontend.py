@@ -10,7 +10,6 @@ def homepage():
     capture_list = get_captures(max=5, processed_only=True)
     # check for failed captures
     failed_captures = get_captures(failed_only=True)
-    print(failed_captures)
     return render_template('homepage.html', processed_captures=processed_captures, total_size=readable_size, captures=capture_list, total_captures=total_captures, failed_captures=failed_captures)
 
 @frontend.route('/all')

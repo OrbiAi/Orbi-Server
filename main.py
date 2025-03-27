@@ -241,7 +241,6 @@ def mass_action_on_failed_endpoint(action):
     
 @app.route('/api/images/<name>', methods=['GET'])
 def images_endpoint(name):
-    print(os.path.join(DATA_DIR, 'images', name))
     return send_from_directory(os.path.join(DATA_DIR, 'images'), name)
 
 @app.route('/api/stats', methods=['GET'])
