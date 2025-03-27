@@ -193,6 +193,11 @@
                 </div>
             </div>
             <h1>Failed Captures</h1>
+
+            {% if not failed_captures %}
+                <p style="margin-top: 20px;">No failed captures found.</p>
+            {% else %}
+
             <form action="/search" method="get" class="searchBar">
                 <input type="text" placeholder="Search.." name="query" value="{{ request.args.get('query', '') }}" class="searchInput">
                 <input type="hidden" name="back" value="all">
@@ -252,6 +257,7 @@
                     <a href="{{ url_for('frontend.failed_captures', page=page+1) }}">Next</a>
                 {% endif %}
             </div>
+            {% endif %}
         </main>
 
         <script>
