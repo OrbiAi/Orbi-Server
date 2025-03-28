@@ -206,6 +206,8 @@
 
             <h2>Recent Captures</h2>
             
+            {% if captures %}
+
             {% for capture in captures %}
             <a href="/info/{{ capture.id }}">
                 <div class="listItem" style="animation: 0.5s itemFade;">
@@ -217,6 +219,12 @@
                 </div>
             </a>
             {% endfor %}
+
+            {% else %}
+            
+            <p style="margin-top: 20px;">No recent captures found.</p>
+
+            {% endif %}
 
             <div class="topButtonContainer">
                 <a href="/all" title="JSON">
