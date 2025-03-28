@@ -191,7 +191,26 @@
                         </div>
                     </a>
                 </div>
+                {% if failed_captures %}
+                <div class="topButtonContainer">
+                    <a onclick="retryAll()" href="#" title="Retry all">
+                        <div class="topButton">
+                            <img class="topButton" src="/static/refresh.svg">
+                            <p class="topButton">Retry all</p>
+                        </div>
+                    </a>
+                </div>
+                <div class="topButtonContainer">
+                    <a onclick="deleteAll()" href="#" title="Delete all">
+                        <div class="topButton">
+                            <img class="topButton" src="/static/delete.svg">
+                            <p class="topButton">Delete all</p>
+                        </div>
+                    </a>        
+                </div>
+                {% endif %}
             </div>
+
             <h1>Failed Captures</h1>
 
             {% if not failed_captures %}
@@ -204,20 +223,6 @@
                 <button type="submit"><img class="searchIcon" src="/static/search.svg" draggable="false"></button>
             </form>
 
-            <a onclick="retryAll()" href="#" title="Retry all">
-                <div class="topButton">
-                    <img class="topButton" src="/static/refresh.svg">
-                    <p class="topButton">Retry all</p>
-                </div>
-            </a>
-
-            <a onclick="deleteAll()" href="#" title="Delete all">
-                <div class="topButton">
-                    <img class="topButton" src="/static/delete.svg">
-                    <p class="topButton">Delete all</p>
-                </div>
-            </a>
-            
             <p id="total_failed">{{ total_failed }} failed captures</p>
             
             {% for capture in failed_captures %}
@@ -270,6 +275,11 @@
                         const captureElement = document.getElementById(`capture-${id}`);
                         if (captureElement) {
                             captureElement.remove();
+                        }
+                        // check if there are no items left for refresh
+                        const captureElements = document.querySelectorAll('.listItem');
+                        if (captureElements.length === 0) {
+                            window.location.reload();
                         }
                         // decrease counter
                         const totalFailedElement = document.getElementById('total_failed');
