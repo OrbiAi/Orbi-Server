@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+
+<html lang="en">
+    <head> 
+        <title>Orbi</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta charset="UTF-8">
+        <style type="text/css">
+            @import url('https://fonts.googleapis.com/css2?family=Figtree:ital,wght@0,300..900;1,300..900&display=swap');
+
+            @keyframes itemFade {
+                0% {
+                    opacity: 0;
+                }
+                100% {
+                    opacity: 1;
+                }
+            }
+
+            html, body {
+                margin: 0;
+                min-height: 100vh;
+            }
+
+            body {
+                color: #cdd6f4;
+                display: flex;
+                justify-content: left;
+                align-items: start;
+                background-color: rgb(30, 30, 46);
+            }
+
+            main {
+                max-width: 820px;
+                height: auto;
+                width: 100%;
+                padding: 0 30px;
+            }
+
+            h1 {
+                font-family: "Figtree", sans-serif;
+                font-optical-sizing: auto;
+                font-weight: 700;
+                font-style: normal;
+                font-size: 40px;
+                color: #b4befe;
+            }
+
+            h2 {
+                font-family: "Figtree", sans-serif;
+                font-optical-sizing: auto;
+                font-weight: 600;
+                font-style: normal;
+                font-size: 24px;
+            }
+
+            h3 {
+                font-family: "Figtree", sans-serif;
+                font-optical-sizing: auto;
+                font-weight: 700;
+                font-style: normal;
+                font-size: 15px;
+            }
+
+            p {
+                font-family: "Figtree", sans-serif;
+                font-optical-sizing: auto;
+                font-weight: 500;
+                font-style: normal;
+                font-size: 16px;
+            }
+
+            a {
+                color: currentColor;
+                text-decoration: none;
+            }
+            
+            .searchBar {
+                max-width: 340px;
+                height: 40px;
+                background: #313244;
+                border-radius: 20px;
+                display: flex;
+                justify-content: left;
+                align-items: center;
+                margin-bottom: 30px;
+                border: 1px solid #555555;
+                box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25) ;
+            }
+
+            input.searchInput {
+                font-family: "Figtree", sans-serif;
+                font-optical-sizing: auto;
+                font-style: normal;
+                margin-left: 20px;
+                font-weight: 700;
+                font-size: 15px;
+                color: #cdd6f4;
+                background: transparent;
+                border: 0;
+                outline: none;
+            }
+
+            ::placeholder {
+                color: #a6adc8;
+            }
+            
+            button {
+                width: 55px;
+                height: 40px;
+                border-top-right-radius: 20px;
+                border-bottom-right-radius: 20px;
+                margin-left: auto;
+                background: transparent;
+                border: none;
+                outline: none;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                cursor: pointer;
+            }
+            
+            .searchIcon {
+                background: transparent;
+                border: 0;
+                outline: none;
+                width: 15px;
+                height: auto;
+            }
+
+            div.listItem {
+                max-width: 820px;
+                min-height: 82px;
+                display: flex;
+                justify-content: left;
+                align-items: center;
+                margin-bottom: 20px;
+                background: #313244;
+                border: 1px solid #555555;
+                border-radius: 15px;
+                box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25) ;
+            }
+
+            img.listItem {
+                height: 50px;
+                width: auto;
+                border-radius: 7.5px;
+                border: 2px solid #F0F0F0;
+                margin-left: 20px;
+                margin-right: 20px;
+            }
+
+            p.listItem {
+                font-weight: 500;
+                font-size: 15px;
+                overflow: hidden;
+            }
+
+            .itemTitle {
+                font-weight: 700;
+                margin-right: 20px;
+            }
+
+            .itemTime {
+                font-weight: 500;
+                margin-right: 20px;
+            }
+
+            .folderButton {
+                width: 130px;
+                height: fit-content;
+                background: #313244;
+                border-radius: 20px;
+                text-align: center;
+                margin-bottom: 30px;
+                border: 1px solid #555555;
+                box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25) ;
+            }
+        </style>
+        <link rel="stylesheet" href="/static/template.css">
+    </head>
+
+    <body>
+        <main>
+            <div class="top">
+                <div class="topButtonContainer">
+                    <a href="/" title="Back">
+                        <div class="topButton">
+                            <img class="topButton" src="/static/arrow.svg">
+                            <p class="topButton">Back</p>
+                        </div>
+                    </a>
+                </div>
+                {% if failed_captures %}
+                <div class="topButtonContainer">
+                    <a onclick="retryAll()" href="#" title="Retry all">
+                        <div class="topButton">
+                            <img class="topButton" src="/static/refresh.svg">
+                            <p class="topButton">Retry all</p>
+                        </div>
+                    </a>
+                </div>
+                <div class="topButtonContainer">
+                    <a onclick="deleteAll()" href="#" title="Delete all">
+                        <div class="topButton">
+                            <img class="topButton" src="/static/delete.svg">
+                            <p class="topButton">Delete all</p>
+                        </div>
+                    </a>        
+                </div>
+                {% endif %}
+            </div>
+
+            <h1>Failed Captures</h1>
+
+            {% if not failed_captures %}
+                <p style="margin-top: 20px;">No failed captures found.</p>
+            {% else %}
+
+            <form action="/search" method="get" class="searchBar">
+                <input type="text" placeholder="Search.." name="query" value="{{ request.args.get('query', '') }}" class="searchInput">
+                <input type="hidden" name="back" value="all">
+                <button type="submit"><img class="searchIcon" src="/static/search.svg" draggable="false"></button>
+            </form>
+
+            <p id="total_failed">{{ total_failed }} failed captures</p>
+            
+            {% for capture in failed_captures %}
+            <div id="capture-{{ capture.id }}" class="listItem" style="animation: 0.5s itemFade; display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; align-items: center;">
+                    <img class="listItem" src="/api/images/{{ capture.image_name }}">
+                    <div class="textContainer">
+                        <p class="itemTitle">{{ capture.focused_window }}</p>
+                        <p class="itemTime">{{ capture.timestamp | to_datetime | datetimeformat }}</p>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 10px; margin-right: 20px;">
+                    <button onclick="retryCapture({{ capture.id }})" title="Retry" style="background: transparent; border: none; cursor: pointer; display: flex; justify-content: center; align-items: center;">
+                        <img src="/static/refresh.svg" alt="Retry" style="width: 27px; height: 27px;">
+                    </button>
+                    <button onclick="deleteCapture({{ capture.id }})" title="Delete" style="background: transparent; border: none; cursor: pointer; display: flex; justify-content: center; align-items: center;">
+                        <img src="/static/delete.svg" alt="Delete" style="width: 20px; height: 20px;">
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+            </div>
+            <div class="pagination">
+                {% if page > 1 %}
+                    <a href="{{ url_for('frontend.failed_captures', page=page-1) }}">Previous</a>
+                {% endif %}
+                
+                {% for p in range(1, total_pages + 1) %}
+                    {% if p == page %}
+                        <strong>{{ p }}</strong>
+                    {% else %}
+                        <a href="{{ url_for('frontend.failed_captures', page=p) }}">{{ p }}</a>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if page < total_pages %}
+                    <a href="{{ url_for('frontend.failed_captures', page=page+1) }}">Next</a>
+                {% endif %}
+            </div>
+            {% endif %}
+        </main>
+
+        <script>
+            function deleteCapture(id) {
+                fetch(`/api/delete/${id}`, {
+                    method: 'DELETE'
+                }).then(response => {
+                    if (response.ok) {
+                        // remove deleted element
+                        const captureElement = document.getElementById(`capture-${id}`);
+                        if (captureElement) {
+                            captureElement.remove();
+                        }
+                        // check if there are no items left for refresh
+                        const captureElements = document.querySelectorAll('.listItem');
+                        if (captureElements.length === 0) {
+                            window.location.reload();
+                        }
+                        // decrease counter
+                        const totalFailedElement = document.getElementById('total_failed');
+                        const totalFailedText = totalFailedElement.textContent;
+                        const totalFailedCount = parseInt(totalFailedText.match(/\d+/)[0]);
+                        totalFailedElement.textContent = `${totalFailedCount - 1} failed captures`;
+                    } else if (response.status === 404) {
+                        alert('Capture not found.');
+                    } else if (response.status === 500) {
+                        alert('Server error. Please try again later.');
+                    } else {
+                        alert('Failed to delete capture.');
+                    }
+                });
+            }
+
+            function retryCapture(id) {
+                fetch(`/api/retry/${id}`, {
+                    method: 'POST'
+                }).then(response => {
+                    if (response.ok) {
+                        // handle successful retry
+                        const captureElement = document.getElementById(`capture-${id}`);
+                        if (captureElement) {
+                        // create a temporary parent div so not-allowed cursor works with pointerevents set to none
+                        // todo: fix flashing
+                        let tempParent = document.createElement('div');
+                        tempParent.style.cursor = 'not-allowed';
+                        
+                        captureElement.parentNode.insertBefore(tempParent, captureElement);
+                        tempParent.appendChild(captureElement);
+
+                        captureElement.style.pointerEvents = 'none';
+                        captureElement.style.opacity = '0.5';
+                    }
+
+                    } else if (response.status === 404) {
+                        alert('Capture not found.');
+                    } else if (response.status === 500) {
+                        alert('Server error. Please try again later.');
+                    } else {
+                        alert('Failed to retry capture.');
+                    }
+                });
+            }
+
+            function retryAll() {
+                if(confirm("This can cause signifinant load on the server if there are multiple failed captures. Are you sure you want to retry all failed captures?")) {
+                    fetch('/api/mass_action_on_failed/retry', {
+                        method: 'POST'
+                    }).then(response => {
+                        if (response.ok) {
+                            // handle successful retry
+                            location.reload();
+                        } else if (response.status === 404) {
+                            alert('No failed captures found.');
+                        } else if (response.status === 500) {
+                            alert('Server error. Please try again later.');
+                        } else {
+                            alert('Failed to retry capture.');
+                        }
+                    });
+                }
+            }
+
+            function deleteAll() {
+                if(confirm("Are you sure you want to delete all failed captures?")) {
+                    fetch('/api/mass_action_on_failed/delete', {
+                        method: 'POST'
+                    }).then(response => {
+                        if (response.ok) {
+                            // handle successful retry
+                            location.reload();
+                        } else if (response.status === 404) {
+                            alert('No failed captures found.');
+                        } else if (response.status === 500) {
+                            alert('Server error. Please try again later.');
+                        } else {
+                            alert('Failed to delete captures.');
+                        }
+                    });
+                }
+            }
+        </script>
+    </body>
+</html>

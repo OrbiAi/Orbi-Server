@@ -190,8 +190,24 @@
             
             <p>{{ processed_captures }} captures, {{ total_size }} consumed</p>
 
+            {% if failed_captures %}
+            <h2>Alerts</h2>
+
+            <a href="/failed_captures">
+                <div class="listItem" style="animation: 0.5s itemFade;">
+                    <img class="listItem" style="border: none" src="/static/red_error.webp">
+                    <div class="textContainer">
+                        <p class="itemTitle">There are failed captures</p>
+                        <p class="itemTime">{{ failed_captures | length }} failed captures found. Click for more info.</p>
+                    </div>
+                </div>
+            </a>
+            {% endif %}
+
             <h2>Recent Captures</h2>
             
+            {% if captures %}
+
             {% for capture in captures %}
             <a href="/info/{{ capture.id }}">
                 <div class="listItem" style="animation: 0.5s itemFade;">
@@ -203,6 +219,12 @@
                 </div>
             </a>
             {% endfor %}
+
+            {% else %}
+            
+            <p style="margin-top: 20px;">No recent captures found.</p>
+
+            {% endif %}
 
             <div class="topButtonContainer">
                 <a href="/all" title="JSON">

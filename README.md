@@ -14,7 +14,7 @@ The Server for Orbi. Required for the Orbi Client. Doesn't need to be hosted on 
 - Python 3.12
 - A decent computer (It runs fine on my PC's RX 7600, but it will struggle on lower-end hardware.)
 - Ollama (Download from https://ollama.com/ and run `ollama pull llama3:8b`. Make sure the server is running)
-- [Tesseract](https://github.com/UB-Mannheim/tesseract/releases/download/v5.4.0.20240606/tesseract-ocr-w64-setup-5.4.0.20240606.exe)
+- [Tesseract](https://github.com/UB-Mannheim/tesseract/releases/latest)
 ### Setup:
 1. `git clone https://github.com/OrbiAi/Orbi-Server` to clone the repository
 2. `python -m venv .venv` to make a new venv

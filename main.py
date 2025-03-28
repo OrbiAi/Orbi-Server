@@ -10,7 +10,7 @@ from threading import Thread
 import pytesseract
 import requests
 from datetime import datetime
-from db_utils import get_stats, get_captures, get_capture_info, delete_capture
+from db_utils import get_stats, get_captures, get_capture_info, delete_capture, mass_action_failed_captures
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
@@ -55,48 +55,83 @@ init_db()
 conn = sqlite3.connect(DATABASE, check_same_thread=False)
 cursor = conn.cursor()
 
+# mark all incomplete captures as failed
+incomplete_captures = get_captures(incomplete_only=True)
+print(f"Marking {len(incomplete_captures)} incomplete captures as failed")
+for capture in incomplete_captures:
+    cursor.execute('''
+        UPDATE captures SET processed = 2 WHERE id = ?
+    ''', (capture['id'],))
+conn.commit()
+
+class CaptureQueueManager:
+    def __init__(self, queue, retry_limit):
+        self.queue = queue
+        self.retry_limit = retry_limit
+
+    def add_to_queue(self, capture_id, retries=0):
+        self.queue.put((capture_id, retries))
+
+    def process_capture(self):
+        while True:
+            capture_id, retries = self.queue.get()
+            try:
+                print(f"Processing capture {capture_id}, attempt {retries + 1}")
+                # get info
+                cursor.execute('''
+                    SELECT * FROM captures WHERE id = ?
+                ''', (capture_id,))
+                capture = cursor.fetchone()
+                file_name = capture[2]
+                file_path = os.path.join(os.path.join(DATA_DIR, 'images'), file_name)
+                focused_window = capture[3]
+                open_windows = capture[4]
+                # ocr
+                pytesseract.pytesseract.tesseract_cmd = TESSERACT_CMD
+                text_seen = ' '.join(pytesseract.image_to_string(file_path).split())
+                cursor.execute('''
+                    UPDATE captures SET text_seen = ? WHERE id = ?
+                ''', (text_seen, capture_id))
+                # ai
+                data = {
+                    "model": "llama3:8b", # todo: add to config
+                    "system": "You will be given text, which is seen on someone's computer screen, as well as their open windows. Your ONLY job is to respond with an assumption of what you think they're doing on their computer.  You shouldn't mention why you think so, you should just say what they're doing, say it clearly, be confident. You should provide it in a documentation-style text, should be 1-6 sentences in a 3rd person view and past simple time, refer to the user as 'user'. You should ONLY say about what the user is currently doing on the MAIN window, unless the other windows are clearly related.",
+                    "prompt": f"Focused window: {focused_window}\nOpen windows: {open_windows}\nText on screen: {text_seen}",
+                    "stream": False
+                }
+                r = requests.post(OLLAMA_SERVER, json=data)
+                r.raise_for_status()
+                ai_description = r.json()['response']
+                cursor.execute('''
+                    UPDATE captures SET ai_description = ? WHERE id = ?
+                ''', (ai_description, capture_id))
+                # mark as processed
+                cursor.execute('''
+                    UPDATE captures SET processed = 1 WHERE id = ?
+                ''', (capture_id,))
+                conn.commit()
+                print(f"Capture {capture_id} processed successfully.")
+            except Exception as e:
+                print(f"Error processing capture {capture_id}: {e}")
+                if retries < self.retry_limit - 1:
+                    self.add_to_queue(capture_id, retries + 1)
+                else:
+                    print(f"Capture {capture_id} failed after {self.retry_limit} attempts.")
+                    # proccessed = 2 means failed
+                    cursor.execute('''
+                        UPDATE captures SET processed = 2 WHERE id = ?
+                    ''', (capture_id,))
+                    conn.commit()
+            finally:
+                self.queue.task_done()
+
 capture_queue = Queue()
+queue_manager = CaptureQueueManager(capture_queue, retry_limit=3) # todo: add to config
 
-def process_capture():
-    while True:
-        capture_id = capture_queue.get()
-        print(f"Processing capture {capture_id}")
-        # get info
-        cursor.execute('''
-            SELECT * FROM captures WHERE id = ?
-        ''', (capture_id,))
-        capture = cursor.fetchone()
-        file_name = capture[2]
-        file_path = os.path.join(os.path.join(DATA_DIR, 'images'), file_name)
-        focused_window = capture[3]
-        open_windows = capture[4]
-        # ocr
-        pytesseract.pytesseract.tesseract_cmd = TESSERACT_CMD
-        text_seen = ' '.join(pytesseract.image_to_string(file_path).split())
-        cursor.execute('''
-            UPDATE captures SET text_seen = ? WHERE id = ?
-        ''', (text_seen, capture_id))
-        # ai
-        data = {
-            "model": "llama3:8b",
-            "system": "You will be given text, which is seen on someone's computer screen, as well as their open windows. Your ONLY job is to respond with an assumption of what you think they're doing on their computer.  You shouldn't mention why you think so, you should just say what they're doing, say it clearly, be confident. You should provide it in a documentation-style text, should be 1-6 sentences in a 3rd person view and past simple time, refer to the user as 'user'. You should ONLY say about what the user is currently doing on the MAIN window, unless the other windows are clearly related.",
-            "prompt": f"Focused window: {focused_window}\nOpen windows: {open_windows}\nText on screen: {text_seen}",
-            "stream": False
-        }
-        r = requests.post(OLLAMA_SERVER, json=data)
-        r.raise_for_status()
-        ai_description = r.json()['response']
-        cursor.execute('''
-            UPDATE captures SET ai_description = ? WHERE id = ?
-        ''', (ai_description, capture_id))
-        # ---
-        cursor.execute('''
-            UPDATE captures SET processed = 1 WHERE id = ?
-        ''', (capture_id,))
-        conn.commit()
-        capture_queue.task_done()
+Thread(target=queue_manager.process_capture, daemon=True).start()
 
-Thread(target=process_capture, daemon=True).start()
+def add_capture_to_queue(capture_id):
+    queue_manager.add_to_queue(capture_id)
 
 @app.template_filter('datetimeformat')
 def datetimeformat(value, format='%Y-%m-%d %H:%M:%S'):
@@ -141,7 +176,7 @@ def submit_endpoint():
         capture_id = cursor.lastrowid
         conn.commit()
         # add to queue for processing
-        capture_queue.put(capture_id)
+        add_capture_to_queue(capture_id)
         return jsonify(message="Capture submitted"), 200
 
 @app.route('/api/search', methods=['GET'])
@@ -149,8 +184,8 @@ def search_endpoint():
     query = request.args.get('query', '')
     max_items = request.args.get('max', type=int, default=-1)
     skip_items = request.args.get('skip', type=int, default=0)
-    ignore_incomplete = request.args.get('ignore_incomplete', 'false').lower() == 'true'
-    capture_list = get_captures(max=max_items, skip=skip_items, search=query, ignore_incomplete=ignore_incomplete)
+    processed_only = request.args.get('processed_only', 'false').lower() == 'true'
+    capture_list = get_captures(max=max_items, skip=skip_items, search=query, processed_only=processed_only)
     return jsonify(capture_list)
 
 @app.route('/api/info/<id>', methods=['GET'])
@@ -167,9 +202,45 @@ def delete_endpoint(id):
     else:
         return jsonify(message="Capture not found"), 404
     
+@app.route('/api/retry/<id>', methods=['POST'])
+def retry_endpoint(id):
+    if get_capture_info(id):
+        # check if already processed
+        cursor.execute('''
+            SELECT processed FROM captures WHERE id = ?
+        ''', (id,))
+        processed = cursor.fetchone()[0]
+        if processed is None or processed != 2:
+            return jsonify(message="Capture already processed"), 400
+        else:
+            # mark as unprocessed
+            cursor.execute('''
+                UPDATE captures SET processed = 0 WHERE id = ?
+            ''', (id,))
+            conn.commit()
+        # add to queue for processing
+        add_capture_to_queue(id)
+        return jsonify(message="Capture retried")
+    else:
+        return jsonify(message="Capture not found"), 404
+    
+@app.route('/api/mass_action_on_failed/<action>', methods=['POST'])
+def mass_action_on_failed_endpoint(action):
+    if action not in ['retry', 'delete']:
+        return jsonify(message="Invalid action"), 400
+    # get all failed captures
+    failed_captures = get_captures(failed_only=True)
+    if not failed_captures:
+        return jsonify(message="No failed captures found"), 404
+    mass_action_failed_captures(action)
+    # if action is retry add all failed captures to queue
+    if action == 'retry':
+        for capture in failed_captures:
+            add_capture_to_queue(capture['id'])
+    return jsonify(message="Mass action started"), 200
+    
 @app.route('/api/images/<name>', methods=['GET'])
 def images_endpoint(name):
-    print(os.path.join(DATA_DIR, 'images', name))
     return send_from_directory(os.path.join(DATA_DIR, 'images'), name)
 
 @app.route('/api/stats', methods=['GET'])

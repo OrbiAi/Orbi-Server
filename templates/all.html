@@ -201,6 +201,8 @@
             
             <p>{{ processed_captures }} captures, {{ total_size }} consumed</p>
             
+            {% if captures %}
+
             {% for capture in captures %}
             <a href="/info/{{ capture.id }}?back=all">
                 <div class="listItem" style="animation: 0.5s itemFade;">
@@ -212,6 +214,13 @@
                 </div>
             </a>
             {% endfor %}
+
+            {% else %}
+
+            <p style="margin-top: 20px;">No captures found.</p>
+
+            {% endif %}
+
             </div>
             <div class="pagination">
                 {% if page > 1 %}
