@@ -53,7 +53,17 @@
 
             <div class="windows">
                 <h3>All Windows</h3>
-                <p>{{ capture.open_windows }}</p>
+                <p>
+                    {% for window in capture.open_windows %}
+                        {% if loop.first %}
+                            <strong>{{ window }}</strong>,<br>
+                        {% elif loop.last %}
+                            {{ window }}<br>
+                        {% else %}
+                            {{ window }},
+                        {% endif %}
+                    {% endfor %}
+                </p>                             
             </div>
         </main>
         <script>

@@ -1,6 +1,7 @@
 import os
 import sqlite3
 import json
+import ast
 from contextlib import contextmanager
 
 with open('config.json') as config_file:
@@ -75,7 +76,7 @@ def get_captures(max=-1, skip=0, search="", processed_only=False, failed_only=Fa
                 'timestamp': capture[1],
                 'image_name': capture[2],
                 'focused_window': capture[3],
-                'open_windows': capture[4],
+                'open_windows': ast.literal_eval(capture[4]),
                 'text_seen': capture[5],
                 'ai_description': capture[6],
                 'processed': capture[7]
@@ -97,7 +98,7 @@ def get_capture_info(capture_id):
         'timestamp': capture[1],
         'image_name': capture[2],
         'focused_window': capture[3],
-        'open_windows': capture[4],
+        'open_windows': ast.literal_eval(capture[4]),
         'text_seen': capture[5],
         'ai_description': capture[6],
         'processed': capture[7]
